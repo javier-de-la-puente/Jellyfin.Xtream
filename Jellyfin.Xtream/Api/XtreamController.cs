@@ -135,7 +135,12 @@ public class XtreamController(IXtreamClient xtreamClient) : ControllerBase
     {
         Plugin plugin = Plugin.Instance;
         List<Category> categories = await xtreamClient.GetVodCategoryAsync(plugin.Creds, cancellationToken).ConfigureAwait(false);
-        return Ok(categories.Select(CreateCategoryResponse));
+        List<CategoryResponse> responses = categories.Select(CreateCategoryResponse).ToList();
+
+        // Add "Uncategorized" category at the beginning to allow selecting items without a category
+        responses.Insert(0, new CategoryResponse { Id = 0, Name = "Uncategorized" });
+
+        return Ok(responses);
     }
 
     /// <summary>
@@ -167,7 +172,12 @@ public class XtreamController(IXtreamClient xtreamClient) : ControllerBase
     {
         Plugin plugin = Plugin.Instance;
         List<Category> categories = await xtreamClient.GetSeriesCategoryAsync(plugin.Creds, cancellationToken).ConfigureAwait(false);
-        return Ok(categories.Select(CreateCategoryResponse));
+        List<CategoryResponse> responses = categories.Select(CreateCategoryResponse).ToList();
+
+        // Add "Uncategorized" category at the beginning to allow selecting items without a category
+        responses.Insert(0, new CategoryResponse { Id = 0, Name = "Uncategorized" });
+
+        return Ok(responses);
     }
 
     /// <summary>

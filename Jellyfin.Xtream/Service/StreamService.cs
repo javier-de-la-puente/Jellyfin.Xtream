@@ -211,7 +211,16 @@ public partial class StreamService(IXtreamClient xtreamClient)
     public async Task<IEnumerable<Category>> GetVodCategories(CancellationToken cancellationToken)
     {
         List<Category> categories = await xtreamClient.GetVodCategoryAsync(Plugin.Instance.Creds, cancellationToken).ConfigureAwait(false);
-        return categories.Where((Category category) => Plugin.Instance.Configuration.Vod.ContainsKey(category.CategoryId));
+        List<Category> filtered = categories.Where((Category category) => Plugin.Instance.Configuration.Vod.ContainsKey(category.CategoryId)).ToList();
+
+        // Always add "Uncategorized" category at the beginning if configured
+        // This allows users to see items without a category or with invalid category IDs
+        if (Plugin.Instance.Configuration.Vod.ContainsKey(0))
+        {
+            filtered.Insert(0, new Category { CategoryId = 0, CategoryName = "Uncategorized" });
+        }
+
+        return filtered;
     }
 
     /// <summary>
@@ -227,6 +236,8 @@ public partial class StreamService(IXtreamClient xtreamClient)
             return new List<StreamInfo>();
         }
 
+        // Try to fetch streams for the category (including 0 for uncategorized)
+        // The Xtream API may return uncategorized items when categoryId = 0
         List<StreamInfo> streams = await xtreamClient.GetVodStreamsByCategoryAsync(Plugin.Instance.Creds, categoryId, cancellationToken).ConfigureAwait(false);
         return streams.Where((StreamInfo stream) => IsConfigured(Plugin.Instance.Configuration.Vod, categoryId, stream.StreamId));
     }
@@ -239,7 +250,16 @@ public partial class StreamService(IXtreamClient xtreamClient)
     public async Task<IEnumerable<Category>> GetSeriesCategories(CancellationToken cancellationToken)
     {
         List<Category> categories = await xtreamClient.GetSeriesCategoryAsync(Plugin.Instance.Creds, cancellationToken).ConfigureAwait(false);
-        return categories.Where((Category category) => Plugin.Instance.Configuration.Series.ContainsKey(category.CategoryId));
+        List<Category> filtered = categories.Where((Category category) => Plugin.Instance.Configuration.Series.ContainsKey(category.CategoryId)).ToList();
+
+        // Always add "Uncategorized" category at the beginning if configured
+        // This allows users to see items without a category or with invalid category IDs
+        if (Plugin.Instance.Configuration.Series.ContainsKey(0))
+        {
+            filtered.Insert(0, new Category { CategoryId = 0, CategoryName = "Uncategorized" });
+        }
+
+        return filtered;
     }
 
     /// <summary>
@@ -255,8 +275,10 @@ public partial class StreamService(IXtreamClient xtreamClient)
             return new List<Series>();
         }
 
+        // Try to fetch series for the category (including 0 for uncategorized)
+        // The Xtream API may return uncategorized items when categoryId = 0
         List<Series> series = await xtreamClient.GetSeriesByCategoryAsync(Plugin.Instance.Creds, categoryId, cancellationToken).ConfigureAwait(false);
-        return series.Where((Series series) => IsConfigured(Plugin.Instance.Configuration.Series, series.CategoryId, series.SeriesId));
+        return series.Where((Series series) => IsConfigured(Plugin.Instance.Configuration.Series, categoryId, series.SeriesId));
     }
 
     /// <summary>
